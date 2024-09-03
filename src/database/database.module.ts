@@ -6,7 +6,7 @@ import { MongooseModule } from '@nestjs/mongoose';
     MongooseModule.forRootAsync({
       useFactory: () => ({
         uri: process.env.MONGODB_URI, // Connection URI for MongoDB
-        dbName: 'Tennis', // Database name
+        dbName: 'Testing', // Database name
       }),
     }),
   ],
