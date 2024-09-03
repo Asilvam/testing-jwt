@@ -1,4 +1,9 @@
-import { Injectable, Logger } from '@nestjs/common';
+import {
+  ConflictException,
+  Injectable,
+  InternalServerErrorException,
+  Logger,
+} from '@nestjs/common';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { User, UserDocument } from './entities/user.entity';
 import { InjectModel } from '@nestjs/mongoose';
@@ -20,8 +25,37 @@ export class UsersService {
   }
 
   async create(createUserDto: CreateUserDto): Promise<User> {
-    const createdUser = new this.userModel(createUserDto);
-    return createdUser.save();
+    try {
+      const existingUser = await this.userModel.findOne({
+        $or: [
+          { username: createUserDto.username },
+          { email: createUserDto.email },
+        ],
+      });
+      if (existingUser) {
+        if (existingUser.username === createUserDto.username) {
+          throw new ConflictException('Username already exists');
+        }
+        if (existingUser.email === createUserDto.email) {
+          throw new ConflictException('Email already exists');
+        }
+      }
+      const createdUser = new this.userModel(createUserDto);
+      return await createdUser.save();
+    } catch (error) {
+      this.handleCreationError(error);
+    }
+  }
+
+  private handleCreationError(error: any): never {
+    this.logger.error(`Failed to create user: ${error.message}`, error.stack);
+    if (error instanceof ConflictException) {
+      throw error;
+    }
+    if (error.name === 'ValidationError') {
+      throw new ConflictException(error.message);
+    }
+    throw new InternalServerErrorException('Failed to create user');
   }
 
   async findAll() {

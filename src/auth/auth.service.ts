@@ -12,7 +12,6 @@ export class AuthService {
   ) {}
 
   async validateUser(username: string, pass: string): Promise<any> {
-    this.logger.log(`validateUser: ${username}`);
     const user = await this.usersService.findOne(username);
     if (user && (await bcrypt.compare(pass, user.password))) {
       const { password, ...result } = user;
@@ -22,7 +21,6 @@ export class AuthService {
   }
 
   async login(user) {
-    this.logger.log(`login--->: ${user.username}`);
     const payload = { username: user.username, sub: user._id };
     return {
       access_token: this.jwtService.sign(payload),
